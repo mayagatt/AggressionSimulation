@@ -61,11 +61,10 @@ def get_g_fun(params):
     return gfun
 
 
-def two_species_batches(y_initial, params):
+def two_species_batches(params):
     '''
 
-    :param params:
-    :param y_initialt:
+    :param params: all params necessary foe a run, including initial conditions
     :return:
     '''
     t = np.arange(0, params['tf'], 0.01)  # todo: change to adaptive mesh, save t in sol
@@ -85,13 +84,13 @@ def two_species_batches(y_initial, params):
 
     eps = 1e-8
     cond = True
-    y0 = copy.deepcopy(y_initial)
+    y0 = {'log10c0': params['log10c0'], 'x': params['x'], 'rhoA': params['rhoA'], 'rhoV': params['rhoV']}
     i = 0
     while cond:  # cond
         i += 1
         sol = run_solver(odefun, t, y0)
-        dilution_factor = (y_initial['rhoA'] + y_initial['rhoV']) / (
-                y_initial['rhoA'] + y_initial['rhoV'] + y_initial['c'])
+        dilution_factor = (params['rhoA'] + params['rhoV']) / (
+                params['rhoA'] + params['rhoV'] + 10**params['log10c0'])
 
         cond = max(y0['rhoV'] - (sol['rhoV'][-1] * dilution_factor),
                    y0['rhoA'] - (sol['rhoA'][-1] * dilution_factor)) > eps
@@ -102,7 +101,7 @@ def two_species_batches(y_initial, params):
         y0['rhoA'] = sol['rhoA'][-1] * dilution_factor
 
         # integrate g(c) per batch
-        temp_integral = trapezoid(y=g_fun(sol['c'], K=params['K']), x=t)
+        temp_integral = trapezoid(y=g_fun(10**sol['log10c0'], K=params['K']), x=t)
         nutrient_integrals.append(temp_integral)
 
         # integrate k(x) per batch
@@ -128,12 +127,12 @@ def two_species_batches(y_initial, params):
 
 
 def run_solver(odefun, t, y0):
-    sol = odeint(odefun, [y0['c'], y0['x'], y0['rhoA'], y0['rhoV']], t)
+    sol = odeint(odefun, [10**y0['log10c0'], y0['x'], y0['rhoA'], y0['rhoV']], t)
     c_t = sol[:, 0]
     x_t = sol[:, 1]
     rhoA_t = sol[:, 2]
     rhoV_t = sol[:, 3]
-    return {'c': c_t, 'x': x_t, 'rhoA': rhoA_t, 'rhoV': rhoV_t}
+    return {'log10c0': np.log10(c_t), 'x': x_t, 'rhoA': rhoA_t, 'rhoV': rhoV_t}
 
 
 def plot_batch(i, out_df):
@@ -151,7 +150,7 @@ def plot_batch(i, out_df):
 def plot_species_density_over_batch_number(out_df, params):
     plt.plot(out_df['rhoA'], label='rhoA', color='r')
     plt.plot(out_df['rhoV'], label='rhoV', color='b')
-    plt.plot(y0['c'] - out_df['rhoV'] - out_df['rhoA'], label='wasted biomass', color='grey')
+    plt.plot(10**params['log10c0'] - out_df['rhoV'] - out_df['rhoA'], label='wasted biomass', color='grey')
     # plt.plot(out_df['dilution_factor'], label='dilut')
     plt.xlabel('Batch number')
     plt.ylabel('Species Density')
@@ -199,30 +198,22 @@ if __name__ == "__main__":
 
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('-o', type=str, required=True, help='Output file')
-    PARSER.add_argument('-d', type=str, required=True, help='Default setup file')
-    PARSER.add_argument('-i', type=str, required=True, help='Setup file')
+    PARSER.add_argument('-d', type=str, required=True, help='Default params')
+    PARSER.add_argument('-s', type=str, required=True, help='Setup file')  # every row is a single run
+    PARSER.add_argument('-n', type=int, required=True, help='row in setup file to run')
     s = PARSER.parse_args()
     out_file = s.o
     default_setup_file = s.d
-    setup_file = s.i
+    setup_file = s.s
     print(setup_file)
     with open(default_setup_file, "r") as in_file:
-        default_setup_data = json.load(in_file)
+        default_params = json.load(in_file)
 
     with open(setup_file, "r") as in_file:
         setup_data = json.load(in_file)
-
-    # merge params with priority to setup_data
-    params = default_setup_data["y0"].copy()
-    y0 = default_setup_data["params"].copy()
-    for key, val in setup_data["params"].items():
-        params[key] = val
-    for key, val in setup_data["y0"].items():
-        y0[key] = val
-
     print(out_file)
 
-    out_df, full_time_series = two_species_batches(default_setup_data["y0"], default_setup_data["params"])
+    out_df, full_time_series = two_species_batches(params)
     out_df.to_csv(out_file)
 
 # if __name__ == "__main__":
@@ -235,8 +226,7 @@ if __name__ == "__main__":
 #     # delta_L = 0.142857
 #     # delta_L = 0.2696325
 #     delta_L = 0.25
-#     y0 = {'c': 1, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5}  # initial cond: c0=1, x0=0, rho_A=1/2, rho_V=1/2
-#     params = {'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': delta_L, 'gtype': 'hill', 'h': 1, 'tf': 10,
+#     params = {'log10c0': 0, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5, 'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': delta_L, 'gtype': 'hill', 'h': 1, 'tf': 10,
 #               'is_restart_antibiotics': True}
 #     out_df, full_time_series = two_species_batches(y0, params)
 #     # plot_species_density_over_time(full_time_series)

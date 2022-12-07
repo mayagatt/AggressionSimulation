@@ -9,22 +9,16 @@
 #SBATCH -t 119:59:00
 #SBATCH --mem=4000
 
-OFFSET=1
+OFFSET=-1
 LINE_NUM=$(echo "$SLURM_ARRAY_TASK_ID + $OFFSET" | bc)
-rundir='ode_species_density'
+rundir='v_a_vs_deltaL_and_c0'
 
 outdir="../Data/Raw/${rundir}"
-line=$(sed -n "$LINE_NUM"p $outdir/to_run.csv)
+mkdir -p $outdir
+outfile="$outdir/out_$LINE_NUM"
+setup_file="$outdir/to_run.csv"
+params_file="$outdir/params.json"
 
 echo "Line $LINE_NUM ; infile $infile ; outfile $outfile"
 
-
-matlab -r "load('$outdir/params.mat'); \
-           params.log10c0 = $log10c0; \
-           params.P = [$p1; 1-$p1]; \
-           params.E = $E'; \
-           params.log10delta = $log10delta'; \
-           disp('An adaptors serial dilution simulation is starting...'); \
-           output = serial_adaptors_odesolver(params,'$outfile'); \
-           disp('Finished!'); \
-           quit();"
+python ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file

@@ -201,13 +201,14 @@ if __name__ == "__main__":
     PARSER.add_argument('-d', type=str, required=True, help='Default params')
     PARSER.add_argument('-s', type=str, required=True, help='Setup file')  # every row is a single run
     PARSER.add_argument('-n', type=int, required=True, help='row in setup file to run')
-    s = PARSER.parse_args()
-    out_file = s.o
-    default_setup_file = s.d
-    setup_file = s.s
+    parser = PARSER.parse_args()
+    out_file = parser.o
+    default_params_file = parser.d
+    setup_file = parser.s
     print(setup_file)
-    with open(default_setup_file, "r") as in_file:
+    with open(default_params_file, "r") as in_file:
         default_params = json.load(in_file)
+    print(default_params)
 
     with open(setup_file, "r") as in_file:
         setup_data = json.load(in_file)

@@ -30,10 +30,17 @@ def params_to_file_name(params):
     return file_name[:-2]
 
 
+def change_deltaL_c0(setup_file_path, params, min_deltaL, max_deltaL, tot_deltaL, min_log10c0, max_log10c0,
+                     tot_log10c0):
+    deltaLs = np.linspace(min_deltaL, max_deltaL, tot_deltaL)
+    log10c0s = np.linspace(min_log10c0, max_log10c0, tot_log10c0)
+    for deltaL in deltaLs:
+        for log10c0 in log10c0s:
+
+
 if __name__ == "__main__":
     params = {'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': 1, 'gtype': 'hill', 'h': 1, 'tf': 10,
               'is_restart_antibiotics': True}
-    min_dL = 0
-    max_dL = 1
-    step_size = 0.5
-    dir_name = different_delta_L(min_dL, max_dL, step_size, params)
+    min_deltaL = 0
+    max_deltaL = 1
+    d_deltaL = 0.5

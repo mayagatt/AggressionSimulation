@@ -16,7 +16,7 @@ rundir='v_a_vs_deltaL_and_c0'
 outdir="../Data/Raw/${rundir}"
 mkdir -p $outdir
 outfile="$outdir/out_$LINE_NUM"
-setup_file="$outdir/to_run.csv"
+setup_file="$outdir/to_run.tsv"
 params_file="$outdir/params.json"
 
 echo "Line $LINE_NUM ; infile $infile ; outfile $outfile"

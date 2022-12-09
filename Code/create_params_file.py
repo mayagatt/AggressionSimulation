@@ -1,46 +1,52 @@
 import numpy as np
-import json
+import pandas as pd
 
 
-def different_delta_L(min, max, step_size, params):
+def change_two_params(setup_file_path, params, param1, param1_arr, param2, param2_arr):
     """
-    :param min: min value of delta_L
-    :param max: max value of delta_L
-    :param step_size: step size of delta_L
-    :param params: all parameters needed for a successful run. Only the delta_L entry will be changed
-    :return: str, the name of a directory containing all the generated files. Each file contains the same params except
-    for delta_L.
+    writes to a csv file a DataFrame containing the same value in each row for all the params, accepts param1 and param2.
+    For every value of param1 we  match all the values of param2, e.g.:
+    param1,param2,all_other_params
+    val_1,val_1,val
+    val_1,val_2,val
+    ...
+    val_1,val_n,val
+    val_2,val_1,val
+    val_2,val_2,val
+    ...
+    val_2,val_n,val
+    ...
+    :param setup_file_path:
+    :param params: all parameters necessary for a single run
+    :param param1: 1st parameters to be changed.
+    :param param1_arr: the different values param1 should have
+    :param param2: 2nd parameters to be changed.
+    :param param2_arr: the different values param2 should have
     """
-    delta_Ls = np.arange(min, max, step_size)
-    dir_name = 'setup_files_delta_Ls\\'
-    for delta_L in delta_Ls:
-        params[
-            'deltaL'] = delta_L  # beware, it is changing the value of the original dict. it works only when changing one param at a time
-        file_name = dir_name + params_to_file_name(params) + '.json'
-        with open(file_name, 'w') as fp:
-            json.dump({'params': params}, fp)
-
-    return dir_name
-
-
-def params_to_file_name(params):
-    file_name = ''
+    df = pd.DataFrame()
     for key, val in params.items():
-        file_name = file_name + key + '_' + str(val) + '__'
-    return file_name[:-2]
-
-
-def change_deltaL_c0(setup_file_path, params, min_deltaL, max_deltaL, tot_deltaL, min_log10c0, max_log10c0,
-                     tot_log10c0):
-    deltaLs = np.linspace(min_deltaL, max_deltaL, tot_deltaL)
-    log10c0s = np.linspace(min_log10c0, max_log10c0, tot_log10c0)
-    for deltaL in deltaLs:
-        for log10c0 in log10c0s:
+        if key == param1:
+            array = np.repeat(param1_arr, len(param2_arr))
+        elif key == param2:
+            array = np.tile(param2_arr, len(param1_arr))
+        else:
+            array = np.tile(val, len(param1_arr) * len(param2_arr))
+        df[key] = array
+    df.to_csv(setup_file_path)
 
 
 if __name__ == "__main__":
-    params = {'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': 1, 'gtype': 'hill', 'h': 1, 'tf': 10,
+    params = {'log10c0': 1, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5, 'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': 1, 'gtype': 'hill', 'h': 1, 'tf': 10,
               'is_restart_antibiotics': True}
     min_deltaL = 0
     max_deltaL = 1
-    d_deltaL = 0.5
+    tot_deltaL = 2
+    min_log10c0 = 0
+    max_log10c0 = 3
+    tot_log10c0 = 4
+    path = "..\Data\Raw\\v_a_vs_deltaL_and_c0\\to_run.tsv"
+    # change_deltaL_c0(path, params, min_deltaL, max_deltaL, tot_deltaL, min_log10c0, max_log10c0, tot_log10c0)
+    deltaLs = np.linspace(min_deltaL, max_deltaL, tot_deltaL)
+    log10c0s = np.linspace(min_log10c0, max_log10c0, tot_log10c0)
+    change_two_params(path, params, param1='deltaL', param2='log10c0', param1_arr=deltaLs, param2_arr=log10c0s)
+

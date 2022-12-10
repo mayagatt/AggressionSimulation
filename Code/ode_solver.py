@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 from scipy.integrate import trapezoid
-import matplotlib.pyplot as plt
-import copy
 
 
 def odefun_creator(params):
@@ -71,9 +69,12 @@ def two_species_batches(params):
     odefun = odefun_creator(params)
     g_fun = get_g_fun(params)
 
-    rhoAs = []  # saving rhoA(0) for batch b=0,1,..., until steady state
-    rhoVs = []
-    xs = []
+    rhoAs_t0 = []  # saving rhoA(0) for batch b=1,..., until steady state
+    rhoVs_t0 = []
+    xs_tf = []
+    rhoAs_tf = []  # saving rhoA(0) for batch b=0,1,..., until steady state
+    rhoVs_tf = []
+    rhoV_deads_ft = []
     dilution_factors = []
     nutrient_integrals = []
     toxin_integrals = []
@@ -90,10 +91,21 @@ def two_species_batches(params):
         i += 1
         sol = run_solver(odefun, t, y0)
         dilution_factor = (params['rhoA'] + params['rhoV']) / (
-                params['rhoA'] + params['rhoV'] + 10**params['log10c0'])
+                params['rhoA'] + params['rhoV'] + 10 ** params['log10c0'])
 
+        # continue simulation while both species are still changing by more than eps between batches
         cond = max(y0['rhoV'] - (sol['rhoV'][-1] * dilution_factor),
                    y0['rhoA'] - (sol['rhoA'][-1] * dilution_factor)) > eps
+
+        # save y0 at t=0
+        rhoAs_t0.append(y0['rhoA'])
+        rhoVs_t0.append(y0['rhoV'])
+        dilution_factors.append(dilution_factor)
+
+        # save y0 at t=tf
+        rhoAs_tf.append(sol['rhoV'][-1])
+        rhoVs_tf.append(sol['rhoV'][-1])
+        xs_tf.append(sol['x'][-1])
 
         # update y0
         y0['x'] = 0 if params['is_restart_antibiotics'] else sol['x'][-1]
@@ -101,82 +113,38 @@ def two_species_batches(params):
         y0['rhoA'] = sol['rhoA'][-1] * dilution_factor
 
         # integrate g(c) per batch
-        temp_integral = trapezoid(y=g_fun(10**sol['log10c0'], K=params['K']), x=t)
+        temp_integral = trapezoid(y=g_fun(10 ** sol['log10c0'], K=params['K']), x=t)
         nutrient_integrals.append(temp_integral)
 
         # integrate k(x) per batch
-        toxin_integral = trapezoid(y=g_fun(sol['x'], K=params['K_L']), x=t)
+        k_x = g_fun(sol['x'], K=params['K_L'])
+        toxin_integral = trapezoid(y=k_x, x=t)
         toxin_integrals.append(toxin_integral)
 
-        # save values at tf
-        rhoAs.append(y0['rhoA'])
-        rhoVs.append(y0['rhoV'])
-        xs.append(sol['x'][-1])  # note! this is x in tf but rho_A,V  are in t=0 of batch b+1
-        dilution_factors.append(dilution_factor)
+        # integrate rhoV dead per batch - deltaL * rhoV * k[x]
+        dead_integral = trapezoid(y=params['deltaL'] * k_x * sol['rhoV'], x=t)
+        rhoV_deads_ft.append(dead_integral)
 
         # save all values of the batch
         rhoA_ts.append(sol['rhoA'])
         rhoV_ts.append(sol['rhoV'])
         x_ts.append(sol['x'])
-    # plot_batch(params, sol, t, y0)
+
     tf_data_base = pd.DataFrame(
-        {'rhoA': np.array(rhoAs), 'rhoV': np.array(rhoVs), 'dilution_factor': np.array(dilution_factors), 'x': xs,
+        {'rhoA_t0': np.array(rhoAs_t0), 'rhoV_t0': np.array(rhoVs_t0), 'rhoA_tf': np.array(rhoAs_tf),
+         'rhoV_tf': np.array(rhoVs_tf), 'x_tf': xs_tf, 'dilution_factor': np.array(dilution_factors),
          'nutrient_integral': nutrient_integrals, 'toxin_integral': toxin_integrals})
     full_time_series = pd.DataFrame({'rhoA_ts': rhoA_ts, 'rhoV_ts': rhoV_ts, 'x_ts': x_ts})
     return tf_data_base, full_time_series
 
 
 def run_solver(odefun, t, y0):
-    sol = odeint(odefun, [10**y0['log10c0'], y0['x'], y0['rhoA'], y0['rhoV']], t)
+    sol = odeint(odefun, [10 ** y0['log10c0'], y0['x'], y0['rhoA'], y0['rhoV']], t)
     c_t = sol[:, 0]
     x_t = sol[:, 1]
     rhoA_t = sol[:, 2]
     rhoV_t = sol[:, 3]
     return {'log10c0': np.log10(c_t), 'x': x_t, 'rhoA': rhoA_t, 'rhoV': rhoV_t}
-
-
-def plot_batch(i, out_df):
-    tf = len(out_df['rhoV_ts'][0])
-    x = np.arange(i * tf, (i + 1) * tf)
-    plt.plot(x, out_df['rhoV_ts'][i], label='rho_V', c='b', linewidth=0.8)
-    plt.plot(x, out_df['rhoA_ts'][i], label='rho_A', c='r', linewidth=0.8)
-    plt.xlabel('t')
-    plt.ylabel('Species Density')
-    plt.legend()
-    plt.savefig('density_evolution_over_80_batches')
-    plt.show()
-
-
-def plot_species_density_over_batch_number(out_df, params):
-    plt.plot(out_df['rhoA'], label='rhoA', color='r')
-    plt.plot(out_df['rhoV'], label='rhoV', color='b')
-    plt.plot(10**params['log10c0'] - out_df['rhoV'] - out_df['rhoA'], label='wasted biomass', color='grey')
-    # plt.plot(out_df['dilution_factor'], label='dilut')
-    plt.xlabel('Batch number')
-    plt.ylabel('Species Density')
-    plt.title(f'delta_L={params["deltaL"]}')
-    plt.legend()
-    plt.show()
-
-
-def plot_species_density_over_time(out_df):
-    plt.figure(dpi=300)
-    # # print(type(out_df['rhoA_ts']))
-    # rhoA_ts_bs = np.concatenate(out_df['rhoA_ts'].values)
-    # print(rhoA_ts_bs)
-    # plt.scatter(np.arange(len(rhoA_ts_bs)), rhoA_ts_bs, label='rhoA_ts')
-    # plt.scatter(np.arange(len(rhoA_ts_bs)), np.arange(len(rhoA_ts_bs)), s=0.05)
-    tf = len(out_df['rhoV_ts'][0])
-    for i in range(len(out_df['rhoV_ts'])):
-        x = np.arange(i * tf, (i + 1) * tf)
-        plt.plot(x, out_df['rhoV_ts'][i], c='b', linewidth=0.8)
-        plt.plot(x, out_df['rhoA_ts'][i], c='r', linewidth=0.8)
-    plt.xlabel('t')
-    plt.ylabel('Species Density')
-    # plt.legend()
-    plt.grid()
-    plt.savefig('density_evolution_over_80_batches')
-    plt.show()
 
 
 # def search_critical_delta_l(delta_min, delta_max):
@@ -205,51 +173,20 @@ if __name__ == "__main__":
     out_file = parser.o
     default_params_file = parser.d
     setup_file = parser.s
+    n = parser.n
     print(setup_file)
     with open(default_params_file, "r") as in_file:
         default_params = json.load(in_file)
     print(default_params)
 
-    with open(setup_file, "r") as in_file:
-        setup_data = json.load(in_file)
-    print(out_file)
+    params_df = pd.read_csv(setup_file, index_col=0)[n:n + 1]
+    # params = all_params
+    # params = pd.DataFrame(all_params.iloc[n])pd.concat
+    params = params_df.to_dict('r')[0]
+    # params=params[0]
+    # print(all_params)
 
     out_df, full_time_series = two_species_batches(params)
+    params_df = (pd.DataFrame(np.repeat(params_df.values, out_df.shape[0], axis=0), columns=params_df.columns))
+    out_df = pd.concat([out_df, params_df], axis=1)  # add params to out file, in every row
     out_df.to_csv(out_file)
-
-# if __name__ == "__main__":
-#     # later: read params from file, run solver, save to data file
-#
-#     # delta_L = 0.221660525  # pretty critical value
-#     integral_ratios = []
-#     dE_dL_ratios = []
-#
-#     # delta_L = 0.142857
-#     # delta_L = 0.2696325
-#     delta_L = 0.25
-#     params = {'log10c0': 0, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5, 'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.1, 'deltaL': delta_L, 'gtype': 'hill', 'h': 1, 'tf': 10,
-#               'is_restart_antibiotics': True}
-#     out_df, full_time_series = two_species_batches(y0, params)
-#     # plot_species_density_over_time(full_time_series)
-#     plot_species_density_over_batch_number(out_df, params)
-#     print(out_df['rhoA'][58])
-#
-#     # shifts = np.linspace(-1e-06, 5*1e-06, 9)
-#     # print(shifts)
-#     # for ii, temp in enumerate(shifts):
-#     #     print(ii)
-#     #     delta_L = 0.2696325 + temp  # pretty critical value for
-#     #     # delta_L = 0.25
-#     #     y0 = {'c': 0.1, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5}  # initial cond: c0=1, x0=0, rho_A=1/2, rho_V=1/2
-#     #     params = {'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.2, 'deltaL': delta_L, 'gtype': 'hill', 'h': 1, 'tf': 10,
-#     #               'is_restart_antibiotics': True}
-#     #     out_df, full_time_series = two_species_batches(y0, params)
-#     #
-#     #     toxin_integral_ss = np.array(out_df['toxin_integral'])[-1]
-#     #     nut_integral_ss = np.array(out_df['nutrient_integral'])[-1]
-#     #     integral_ratios.append(toxin_integral_ss / nut_integral_ss)
-#     #     dE_dL_ratios.append(params['DeltaE'] / params['deltaL'])
-#     #     plot_species_density_over_batch_number(out_df,params)
-#
-#     # plot_species_density_over_time(full_time_series)
-#     # plot_species_density_over_batch_number(out_df)

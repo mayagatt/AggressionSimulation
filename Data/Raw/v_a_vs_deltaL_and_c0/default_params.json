@@ -1,0 +1,15 @@
+{
+  "c": 1,
+  "x": 0,
+  "rhoA": 0.5,
+  "rhoV": 0.5,
+  "K": 1,
+  "K_L": 1,
+  "E": 1,
+  "DeltaE": 0.1,
+  "deltaL": 0.1,
+  "gtype": "hill",
+  "h": 1,
+  "tf": 10,
+  "is_restart_antibiotics": 1
+}

@@ -27,7 +27,6 @@ def change_two_params(setup_file_path, params, param1, param1_arr, param2, param
     tot_len = len(param1_arr) * len(param2_arr)
     df = (pd.DataFrame(np.repeat(df.values, tot_len, axis=0), columns=df.columns))  # repeat same row in all df
     df[param1] = np.repeat(param1_arr, len(param2_arr))  # replace param1
-    print(param2_arr)
     df[param2] = np.round(np.tile(param2_arr, len(param1_arr)), 1)  # replace param2, todo: beware of the rounding
     df.to_csv(setup_file_path)
 
@@ -51,6 +50,4 @@ if __name__ == "__main__":
     # path = ".\Data\Raw\\v_a_vs_deltaL_and_c0\\to_run.tsv"
     deltaLs = np.linspace(min_deltaL, max_deltaL, tot_deltaL)
     log10c0s = np.linspace(min_log10c0, max_log10c0, tot_log10c0)
-    print(log10c0s)
-    print(deltaLs)
     change_two_params(out_file, params, param1='deltaL', param2='log10c0', param1_arr=deltaLs, param2_arr=log10c0s)

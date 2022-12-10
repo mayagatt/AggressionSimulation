@@ -17,7 +17,7 @@ outdir="../Data/Raw/${rundir}"
 mkdir -p $outdir
 outfile="$outdir/out_$LINE_NUM"
 setup_file="$outdir/to_run.tsv"
-params_file="$outdir/params.json"
+params_file="$outdir/default_params.json"
 
 echo "Line $LINE_NUM ; infile $infile ; outfile $outfile"
 

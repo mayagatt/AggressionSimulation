@@ -183,10 +183,8 @@ if __name__ == "__main__":
     default_params_file = parser.d
     setup_file = parser.s
     n = parser.n
-    print(setup_file)
     with open(default_params_file, "r") as in_file:
         default_params = json.load(in_file)
-    print(default_params)
 
     params_df = pd.read_csv(setup_file, index_col=0)[n:n + 1]
     # params = all_params

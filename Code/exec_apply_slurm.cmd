@@ -21,6 +21,4 @@ setup_file="$outdir/to_run.tsv"
 params_file="$outdir/default_params.json"
 
 echo "Line $LINE_NUM ; params_file $params_file ; outfile $outfile"
-ls -l
-pwd
-python3 /mnt/Spinning1/Maya/two_species_serial_dilution/AggressionSimulation/Code/ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file
+python3 /mnt/Spinning1/Maya/two_species_serial_dilution/AggressionSimulation/Code/ode_solver.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file

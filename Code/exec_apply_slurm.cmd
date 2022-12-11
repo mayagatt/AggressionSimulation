@@ -1,6 +1,6 @@
 #!/bin/bash
-# #SBATCH --array=1-3131
-#SBATCH --array=1-3131
+# #SBATCH --array=1-1
+#SBATCH --array=1-1000
 #SBATCH -o logs/scan_%A_%a.out
 #SBATCH -N 1 # node count
 #SBATCH -c 1

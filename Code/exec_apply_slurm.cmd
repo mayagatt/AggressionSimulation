@@ -1,6 +1,6 @@
 #!/bin/bash
 # #SBATCH --array=1-324
-#SBATCH --array=1-1
+#SBATCH --array=1-2
 #SBATCH -o logs/scan_%A_%a.out
 #SBATCH -N 1 # node count
 #SBATCH -c 1
@@ -21,4 +21,4 @@ params_file="$outdir/default_params.json"
 
 echo "Line $LINE_NUM ; infile $infile ; outfile $outfile"
 
-python ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file
+python3 ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file

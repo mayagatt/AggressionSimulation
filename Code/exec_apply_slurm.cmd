@@ -22,4 +22,4 @@ params_file="$outdir/default_params.json"
 
 echo "Line $LINE_NUM ; params_file $params_file ; outfile $outfile"
 
-python3 ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file
+python3 ./ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file

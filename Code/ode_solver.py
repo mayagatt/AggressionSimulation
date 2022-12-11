@@ -44,18 +44,27 @@ def get_g_fun(params):
     :param params:
     :return: function, g(c)
     '''
-    match params['gtype']:  # set gfun as the growth function
-        case 'hill':
-            def gfun(x, K):
-                return (x ** params['h']) / ((K ** params['h']) + (x ** params['h']))
-        case 'linear':
-            def gfun(x, K):
-                return x / K
-        case _:
-            print('invalid growth function type')
-
-            def gfun(x, K):
-                return None
+    if params['gtype'] == 'hill':
+        def gfun(x, K):
+            return (x ** params['h']) / ((K ** params['h']) + (x ** params['h']))
+    elif params['gtype'] == 'linear':
+        def gfun(x, K):
+            return x / K
+    else:
+        def gfun(x, K):
+            return None
+    # match params['gtype']:  # set gfun as the growth function
+    #     case 'hill':
+    #         def gfun(x, K):
+    #             return (x ** params['h']) / ((K ** params['h']) + (x ** params['h']))
+    #     case 'linear':
+    #         def gfun(x, K):
+    #             return x / K
+    #     case _:
+    #         print('invalid growth function type')
+    #
+    #         def gfun(x, K):
+    #             return None
     return gfun
 
 
@@ -182,7 +191,7 @@ if __name__ == "__main__":
     params_df = pd.read_csv(setup_file, index_col=0)[n:n + 1]
     # params = all_params
     # params = pd.DataFrame(all_params.iloc[n])pd.concat
-    params = params_df.to_dict('r')[0]
+    params = params_df.to_dict('records')[0]
     # params=params[0]
     # print(all_params)
 
@@ -190,3 +199,4 @@ if __name__ == "__main__":
     params_df = (pd.DataFrame(np.repeat(params_df.values, out_df.shape[0], axis=0), columns=params_df.columns))
     out_df = pd.concat([out_df, params_df], axis=1)  # add params to out file, in every row
     out_df.to_csv(out_file)
+    print('done')

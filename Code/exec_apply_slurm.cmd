@@ -11,6 +11,7 @@
 
 OFFSET=-1
 LINE_NUM=$(echo "$SLURM_ARRAY_TASK_ID + $OFFSET" | bc)
+echo "$LINE_NUM"
 rundir='v_a_vs_deltaL_and_c0'
 
 outdir="../Data/Raw/${rundir}"
@@ -19,6 +20,6 @@ outfile="$outdir/out_$LINE_NUM"
 setup_file="$outdir/to_run.tsv"
 params_file="$outdir/default_params.json"
 
-echo "Line $LINE_NUM ; infile $infile ; outfile $outfile"
+echo "Line $LINE_NUM ; params_file $params_file ; outfile $outfile"
 
 python3 ode_solve.py -o $outfile -d $params_file -n $LINE_NUM -s $setup_file

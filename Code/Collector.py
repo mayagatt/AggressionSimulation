@@ -26,4 +26,4 @@ if __name__ == "__main__":
             except:
                 print('no results for run')
 
-    collected_df.to_csv(out_file + 'csv')
+    collected_df.to_csv(out_file + '.csv')

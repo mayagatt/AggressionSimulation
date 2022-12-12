@@ -1,6 +1,6 @@
 #!/bin/bash
 # #SBATCH --array=1-1
-#SBATCH --array=1-1000
+#SBATCH --array=1-200
 #SBATCH -o logs/scan_%A_%a.out
 #SBATCH -N 1 # node count
 #SBATCH -c 1
@@ -9,7 +9,7 @@
 #SBATCH -t 119:59:00
 #SBATCH --mem=4000
 
-OFFSET=1999
+OFFSET=2999
 LINE_NUM=$(echo "$SLURM_ARRAY_TASK_ID + $OFFSET" | bc)
 echo "$LINE_NUM"
 rundir='v_a_vs_deltaL_and_c0'

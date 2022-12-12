@@ -9,7 +9,7 @@
 #SBATCH -t 119:59:00
 #SBATCH --mem=4000
 
-OFFSET=999
+OFFSET=1999
 LINE_NUM=$(echo "$SLURM_ARRAY_TASK_ID + $OFFSET" | bc)
 echo "$LINE_NUM"
 rundir='v_a_vs_deltaL_and_c0'

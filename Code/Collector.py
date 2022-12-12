@@ -16,10 +16,14 @@ if __name__ == "__main__":
     for file in os.listdir(raw_data_dir):
         filename = raw_data_dir + "/" + os.fsdecode(file)
         if filename.endswith(".csv"):
-            ss_data_df = pd.read_csv(filename, index_col=0)[-2:-1]
-            if i == 0:
-                collected_df = ss_data_df
-                i += 1
-            else:
-                collected_df = pd.concat([collected_df, ss_data_df], ignore_index=True)
+            try:
+                ss_data_df = pd.read_csv(filename, index_col=0)[-2:-1]
+                if i == 0:
+                    collected_df = ss_data_df
+                    i += 1
+                else:
+                    collected_df = pd.concat([collected_df, ss_data_df], ignore_index=True)
+            except:
+                print('no results for run')
+
     collected_df.to_csv(out_file + 'csv')

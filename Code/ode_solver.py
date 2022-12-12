@@ -196,5 +196,4 @@ if __name__ == "__main__":
     out_df, full_time_series = two_species_batches(params)
     params_df = (pd.DataFrame(np.repeat(params_df.values, out_df.shape[0], axis=0), columns=params_df.columns))
     out_df = pd.concat([out_df, params_df], axis=1)  # add params to out file, in every row
-    out_df.to_csv(out_file)
-    print('done')
+    out_df.to_csv(out_file+'.csv')

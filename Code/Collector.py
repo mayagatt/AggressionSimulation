@@ -17,7 +17,7 @@ if __name__ == "__main__":
         filename = raw_data_dir + "/" + os.fsdecode(file)
         if filename.endswith(".pkl"):
             try:
-                ss_data_df = pd.read_pickle(filename, index_col=0)[-2:-1]
+                ss_data_df = pd.read_pickle(filename)[-2:-1]
                 if i == 0:
                     collected_df = ss_data_df
                     i += 1

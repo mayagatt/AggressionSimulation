@@ -5,14 +5,14 @@ from scipy.integrate import trapezoid
 
 
 def odefun_creator(params):
-    '''
+    """
     DEfining the 4 diff equation for the in-batch development of the nutrient c, toxin x, aggressor rho_A, victim rho_V
     :param t: time
     :param y: vector (c, x, rho_A, rho_V)
     :param params: must have: K (for g[c]), K_L (for g[x]), E (max consumption), DeltaE (resources allocated for toxin
     production), deltaL (not sure todo??) , gtype (str, 'hill' or 'linear'), h (hill func param)
     :return: dydt [= f(y)]
-    '''
+    """
     gfun = get_g_fun(params)
 
     def odefun(y, t):

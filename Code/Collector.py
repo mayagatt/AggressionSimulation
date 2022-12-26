@@ -12,18 +12,21 @@ if __name__ == "__main__":
     out_file = parser.o
 
     collected_df = pd.DataFrame()
-    i = 0
+    is_first = True
+    run_numbers = []
     for file in os.listdir(raw_data_dir):
         filename = raw_data_dir + "/" + os.fsdecode(file)
         if filename.endswith(".pkl"):
+            run_numbers.append(file.replace("out_", "").replace(".pkl", ""))  # save the run number
             try:
                 ss_data_df = pd.read_pickle(filename)[-2:-1]
-                if i == 0:
+                if is_first:
                     collected_df = ss_data_df
-                    i += 1
+                    is_first = False
                 else:
                     collected_df = pd.concat([collected_df, ss_data_df], ignore_index=True)
             except:
                 print('no results for run')
 
+    collected_df['run_number'] = run_numbers
     collected_df.to_pickle(out_file + '.pkl')

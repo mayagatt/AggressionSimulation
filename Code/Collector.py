@@ -29,4 +29,4 @@ if __name__ == "__main__":
                 print('no results for run')
 
     collected_df['run_number'] = run_numbers
-    collected_df.to_pickle(out_file + '.pkl')
+    collected_df.to_csv(out_file + '.csv')

@@ -53,18 +53,6 @@ def get_g_fun(params):
     else:
         def gfun(x, K):
             return None
-    # match params['gtype']:  # set gfun as the growth function
-    #     case 'hill':
-    #         def gfun(x, K):
-    #             return (x ** params['h']) / ((K ** params['h']) + (x ** params['h']))
-    #     case 'linear':
-    #         def gfun(x, K):
-    #             return x / K
-    #     case _:
-    #         print('invalid growth function type')
-    #
-    #         def gfun(x, K):
-    #             return None
     return gfun
 
 
@@ -103,8 +91,8 @@ def two_species_batches(params):
                 params['rhoA'] + params['rhoV'] + 10 ** params['log10c0'])
 
         # continue simulation while both species are still changing by more than eps between batches
-        cond = max(y0['rhoV'] - (sol['rhoV'][-1] * dilution_factor),
-                   y0['rhoA'] - (sol['rhoA'][-1] * dilution_factor)) > eps
+        cond = max(abs(y0['rhoV'] - (sol['rhoV'][-1] * dilution_factor)),
+                   abs(y0['rhoA'] - (sol['rhoA'][-1] * dilution_factor))) > eps
 
         # save y0 at t=0
         rhoAs_t0.append(y0['rhoA'])
@@ -149,24 +137,12 @@ def two_species_batches(params):
 
 def run_solver(odefun, t, y0):
     sol = odeint(odefun, [10 ** y0['log10c0'], y0['x'], y0['rhoA'], y0['rhoV']], t)
-    c_t = sol[:, 0]
+    c_t = np.array(sol[:, 0])
     x_t = sol[:, 1]
     rhoA_t = sol[:, 2]
     rhoV_t = sol[:, 3]
-    return {'log10c0': np.log10(c_t), 'x': x_t, 'rhoA': rhoA_t, 'rhoV': rhoV_t}
-
-
-# def search_critical_delta_l(delta_min, delta_max):
-#     y0 = {'c': 1, 'x': 0, 'rhoA': 0.5, 'rhoV': 0.5}  # initial cond: c0=1, x0=0, rho_A=1/2, rho_V=1/2
-#     params = {'K': 1, 'K_L': 1, 'E': 1, 'DeltaE': 0.2, 'deltaL': 0.025, 'gtype': 'hill', 'h': 1, 'tf': 10,
-#               'is_restart_antibiotics': True}
-#     # delta_Ls = np.arange(delta_min, delta_max, d_delta)
-#     params['deltaL'] = delta_L
-#     out_df, full_time_series = two_species_batches(y0, params)
-#     if out_df['rhoA'] - out_df['rhoV'] > 0:  # rhoA wins
-#
-#     for delta_L in delta_Ls:
-#         plot_species_density_over_time(full_time_series)
+    log10c0 = np.log10(np.where(c_t > 1e-10, c_t, 1e-10))
+    return {'log10c0': log10c0, 'x': x_t, 'rhoA': rhoA_t, 'rhoV': rhoV_t}
 
 
 if __name__ == "__main__":
@@ -185,15 +161,10 @@ if __name__ == "__main__":
     n = parser.n
     with open(default_params_file, "r") as in_file:
         default_params = json.load(in_file)
-
     params_df = pd.read_csv(setup_file, index_col=0)[n:n + 1]
-    # params = all_params
-    # params = pd.DataFrame(all_params.iloc[n])pd.concat
     params = params_df.to_dict('records')[0]
-    # params=params[0]
-    # print(all_params)
 
     out_df, full_time_series = two_species_batches(params)
     params_df = (pd.DataFrame(np.repeat(params_df.values, out_df.shape[0], axis=0), columns=params_df.columns))
     out_df = pd.concat([out_df, params_df], axis=1)  # add params to out file, in every row
-    out_df.to_pickle(out_file+'.pkl')
+    out_df.to_pickle(out_file + '.pkl')
